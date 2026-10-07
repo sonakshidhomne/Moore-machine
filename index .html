@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#182848">
+  <meta name="description" content="Binary 2's Complementer using a Moore Machine">
+  <link rel="manifest" href="manifest.json">
+  <title>Binary 2's Complementer</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef3ff,#f8fbff);color:#172033}
+    .app{max-width:1000px;margin:auto;padding:18px}
+    header{background:linear-gradient(135deg,#182848,#4b6cb7);color:white;border-radius:22px;padding:24px;box-shadow:0 10px 30px #0002}
+    h1{margin:0 0 8px;font-size:28px}
+    header p{margin:0;opacity:.9}
+    .card{background:white;border-radius:18px;padding:20px;margin-top:18px;box-shadow:0 5px 22px #17203318}
+    label{font-weight:bold;display:block;margin-bottom:8px}
+    input{width:100%;padding:14px;border:2px solid #dce3f2;border-radius:12px;font-size:18px;outline:none}
+    input:focus{border-color:#4b6cb7}
+    .buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:12px;padding:12px 18px;font-size:16px;font-weight:bold;cursor:pointer;background:#182848;color:white}
+    button.secondary{background:#e9eef9;color:#182848}
+    button.install{background:#198754}
+    .result{font-size:30px;font-weight:bold;letter-spacing:3px;text-align:center;padding:18px;background:#eef7f1;border-radius:14px;margin-top:15px;word-break:break-all}
+    .error{color:#b42318;font-weight:bold;margin-top:10px}
+    .info{line-height:1.6}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid #e5e9f2;text-align:center}
+    th{background:#f2f5fb}
+    .state{font-weight:bold}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+    .statebox{padding:15px;border-radius:14px;background:#f5f7fc;border:1px solid #e0e6f2}
+    .statebox b{font-size:18px}
+    .footer{text-align:center;color:#667085;font-size:13px;padding:18px}
+    @media(max-width:600px){h1{font-size:23px}.app{padding:10px}.card{padding:15px}.result{font-size:24px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🔢 Binary 2's Complementer</h1>
+    <p>Moore Machine Model • Right-to-Left Processing</p>
+  </header>
+
+  <div class="card">
+    <label for="binary">Enter Binary Number</label>
+    <input id="binary" inputmode="numeric" maxlength="1000" placeholder="Example: 101100">
+    <div class="buttons">
+      <button onclick="calculate()">Calculate 2's Complement</button>
+      <button class="secondary" onclick="setExample()">Example</button>
+      <button class="secondary" onclick="clearAll()">Clear</button>
+      <button id="installBtn" class="install" hidden>📲 Install App</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+
+  <div class="card" id="outputCard" hidden>
+    <h2>Result</h2>
+    <div class="result" id="result"></div>
+    <p class="info"><b>Method:</b> Starting from the rightmost bit, copy bits through the first 1; then complement all remaining bits.</p>
+  </div>
+
+  <div class="card" id="stepsCard" hidden>
+    <h2>Moore Machine Steps</h2>
+    <p class="info">The input is processed from <b>right to left</b>.</p>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Step</th><th>Input Bit</th><th>State</th><th>State Output</th><th>Output Bit</th></tr></thead>
+        <tbody id="steps"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Moore Machine States</h2>
+    <div class="grid">
+      <div class="statebox"><b>q0 — Copy Zeros</b><br>Copy 0 while scanning from right to left.</div>
+      <div class="statebox"><b>q1 — First 1</b><br>The first 1 from the right is copied.</div>
+      <div class="statebox"><b>q2 — Complement</b><br>All remaining bits are inverted.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Transition Logic</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Current State</th><th>Input</th><th>Next State</th><th>Operation</th></tr></thead>
+        <tbody>
+          <tr><td>q0</td><td>0</td><td>q0</td><td>Copy 0</td></tr>
+          <tr><td>q0</td><td>1</td><td>q1</td><td>Copy 1</td></tr>
+          <tr><td>q1</td><td>0 / 1</td><td>q2</td><td>Start complementing</td></tr>
+          <tr><td>q2</td><td>0</td><td>q2</td><td>Output 1</td></tr>
+          <tr><td>q2</td><td>1</td><td>q2</td><td>Output 0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Binary 2's Complementer • Moore Machine Web App</div>
+</div>
+
+<script>
+let deferredPrompt;
+const installBtn=document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  installBtn.hidden=false;
+});
+installBtn.addEventListener('click',async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  installBtn.hidden=true;
+});
+window.addEventListener('appinstalled',()=>{installBtn.hidden=true});
+
+function setExample(){document.getElementById('binary').value='101100';calculate()}
+function clearAll(){
+  document.getElementById('binary').value='';
+  document.getElementById('error').textContent='';
+  document.getElementById('outputCard').hidden=true;
+  document.getElementById('stepsCard').hidden=true;
+}
+function calculate(){
+  const input=document.getElementById('binary').value.trim();
+  const error=document.getElementById('error');
+  error.textContent='';
+  if(!input){error.textContent='Please enter a binary number.';return}
+  if(!/^[01]+$/.test(input)){error.textContent='Only 0 and 1 are allowed.';return}
+
+  // Correct 2's complement: invert then add 1.
+  // Equivalent right-to-left rule: copy zeros, copy first 1, complement the rest.
+  let carryFound=false, out=[];
+  let rows=[];
+  let state='q0';
+  let step=1;
+
+  for(let i=input.length-1;i>=0;i--){
+    const bit=input[i];
+    let outputBit, nextState, stateOutput;
+
+    if(state==='q0'){
+      if(bit==='0'){
+        outputBit='0'; nextState='q0'; stateOutput='0';
+      }else{
+        outputBit='1'; nextState='q1'; stateOutput='1';
+      }
+    }else if(state==='q1'){
+      outputBit=(bit==='0')?'1':'0';
+      nextState='q2'; stateOutput=outputBit;
+    }else{
+      outputBit=(bit==='0')?'1':'0';
+      nextState='q2'; stateOutput=outputBit;
+    }
+
+    out.unshift(outputBit);
+    rows.push({step,bit,state,stateOutput,outputBit});
+    state=nextState; step++;
+  }
+
+  // For an all-zero input, result is all zeros; q0 naturally handles it.
+  document.getElementById('result').textContent=out.join('');
+  document.getElementById('outputCard').hidden=false;
+  document.getElementById('stepsCard').hidden=false;
+
+  document.getElementById('steps').innerHTML=rows.map(r=>
+    `<tr><td>${r.step}</td><td>${r.bit}</td><td class="state">${r.state}</td><td>${r.stateOutput}</td><td><b>${r.outputBit}</b></td></tr>`
+  ).join('');
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js'));
+}
+</script>
+</body>
+</html>
